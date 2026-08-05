@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>LiftLog</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background:#111;
+    color:white;
+    margin:0;
+    padding:20px;
+}
+
+h1 {
+    text-align:center;
+}
+
+button {
+    padding:12px;
+    margin:5px;
+    border-radius:8px;
+    border:none;
+    font-size:16px;
+}
+
+.routine {
+    background:#222;
+    padding:15px;
+    margin:10px 0;
+    border-radius:10px;
+}
+
+.exercise {
+    background:#1d1d1d;
+    padding:15px;
+    margin:10px 0;
+    border-radius:10px;
+}
+
+input {
+    width:60px;
+    font-size:18px;
+    text-align:center;
+}
+
+.complete {
+    background:#2ecc71;
+}
+
+.plusminus {
+    background:#444;
+    color:white;
+}
+
+.timer {
+    font-size:40px;
+    text-align:center;
+    margin:20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🏋 LiftLog</h1>
+
+<div id="app"></div>
+
+
+<script>
+
+let routines = {
+
+"Push Day":[
+"Bench Press",
+"Shoulder Press",
+"Dumbbell Fly",
+"Triceps Extension"
+],
+
+"Pull Day":[
+"Barbell Row",
+"Lat Pulldown",
+"Bicep Curl"
+],
+
+"Leg Day":[
+"Squat",
+"Romanian Deadlift",
+"Calf Raise"
+]
+
+};
+
+
+let workout=[];
+let history=JSON.parse(localStorage.getItem("history")) || {};
+
+
+function home(){
+
+let html="<h2>My Workouts</h2>";
+
+for(let r in routines){
+
+html+=`
+<div class="routine">
+<h3>${r}</h3>
+<button onclick="startWorkout('${r}')">
+START
+</button>
+</div>
+`;
+
+}
+
+document.getElementById("app").innerHTML=html;
+
+}
+
+
+function startWorkout(name){
+
+workout=[];
+
+routines[name].forEach(e=>{
+
+workout.push({
+
+exercise:e,
+sets:[
+{weight:getLast(e), reps:10, done:false},
+{weight:getLast(e), reps:10, done:false},
+{weight:getLast(e), reps:10, done:false}
+]
+
+});
+
+});
+
+
+showWorkout(name);
+
+}
+
+
+function getLast(ex){
+
+return history[ex]?.weight || 0;
+
+}
+
+
+function showWorkout(name){
+
+let html=`<h2>${name}</h2>`;
+
+workout.forEach((ex,i)=>{
+
+html+=`
+<div class="exercise">
+
+<h3>${ex.exercise}</h3>
+`;
+
+ex.sets.forEach((set,s)=>{
+
+html+=`
+
+Set ${s+1}
+
+<br>
+
+Weight:
+<button class="plusminus" onclick="changeWeight(${i},${s},-2.5)">-</button>
+
+<input id="w${i}${s}" value="${set.weight}">
+
+<button class="plusminus" onclick="changeWeight(${i},${s},2.5)">+</button>
+
+<br>
+
+Reps:
+<button class="plusminus" onclick="changeReps(${i},${s},-1)">-</button>
+
+<input id="r${i}${s}" value="${set.reps}">
+
+<button class="plusminus" onclick="changeReps(${i},${s},1)">+</button>
+
+<br>
+
+<button class="complete"
+onclick="completeSet(${i},${s})">
+
+${set.done?"Completed ✓":"Complete Set"}
+
+</button>
+
+<hr>
+
+`;
+
+});
+
+html+="</div>";
+
+});
+
+
+html+=`
+<button onclick="home()">Finish Workout</button>
+
+<div class="timer" id="timer"></div>
+`;
+
+document.getElementById("app").innerHTML=html;
+
+}
+
+
+
+function changeWeight(i,s,val){
+
+workout[i].sets[s].weight+=val;
+
+if(workout[i].sets[s].weight<0)
+workout[i].sets[s].weight=0;
+
+showWorkout();
+
+}
+
+
+function changeReps(i,s,val){
+
+workout[i].sets[s].reps+=val;
+
+if(workout[i].sets[s].reps<0)
+workout[i].sets[s].reps=0;
+
+showWorkout();
+
+}
+
+
+
+function completeSet(i,s){
+
+let set=workout[i].sets[s];
+
+set.done=true;
+
+
+history[workout[i].exercise]={
+weight:set.weight,
+reps:set.reps
+};
+
+
+localStorage.setItem(
+"history",
+JSON.stringify(history)
+);
+
+
+startTimer();
+
+showWorkout();
+
+}
+
+
+
+function startTimer(){
+
+let seconds=45;
+
+let timer=setInterval(()=>{
+
+let box=document.getElementById("timer");
+
+if(!box){
+clearInterval(timer);
+return;
+}
+
+box.innerHTML="Rest: "+seconds;
+
+seconds--;
+
+if(seconds<0){
+
+clearInterval(timer);
+
+box.innerHTML="Rest complete";
+
+}
+
+},1000);
+
+}
+
+
+home();
+
+</script>
+
+</body>
+</html>
